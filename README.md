@@ -1,4 +1,4 @@
-# Deepseek LLM
+# Deepseek LLMs
 
 This project utilizes Deepseek for large language model (LLM) processing within a Docker container.
 
