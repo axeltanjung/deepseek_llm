@@ -1,12 +1,10 @@
 # Import libraries
 import torch
+import faiss
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import deepseek
-
-# Load your dataset
+from sentence_transformers import SentenceTransformer
 from datasets import load_dataset
-
-# Fine-tune the model using DeepSeek
 from deepseek import Trainer, TrainingArguments
 
 # Load pre-trained model and tokenizer
@@ -18,6 +16,7 @@ tokenizer = AutoTokenizer.from_pretrained(model_name)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model.to(device)
 
+# Load your dataset
 dataset = load_dataset("your_dataset_name")
 
 # Preprocess the dataset
@@ -26,6 +25,7 @@ def preprocess_function(examples):
 
 tokenized_datasets = dataset.map(preprocess_function, batched=True)
 
+# Fine-tune the model using DeepSeek
 training_args = TrainingArguments(
     output_dir="./results",
     evaluation_strategy="epoch",
@@ -59,3 +59,21 @@ print(generated_text)
 # Evaluate the model
 eval_results = trainer.evaluate()
 print(f"Perplexity: {eval_results['eval_loss']}")
+
+# Generate embeddings using SentenceTransformer
+embedder = SentenceTransformer('all-MiniLM-L6-v2')
+embeddings = embedder.encode(dataset['train']['text'], convert_to_tensor=True)
+
+# Create a FAISS index and add embeddings
+d = embeddings.shape[1]
+index = faiss.IndexFlatL2(d)
+index.add(embeddings.cpu().numpy())
+
+# Example query
+query = "example query text"
+query_embedding = embedder.encode([query], convert_to_tensor=True)
+D, I = index.search(query_embedding.cpu().numpy(), k=5)  # k is the number of nearest neighbors
+
+# Print the results
+print("Nearest neighbors:", I)
+print("Distances:", D)

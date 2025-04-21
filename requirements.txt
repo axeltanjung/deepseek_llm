@@ -1,3 +1,4 @@
 transformers
 torch
 deepseek
+sentence_transformers
